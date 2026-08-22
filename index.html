@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MelodyFlow Studio</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #161a23;
+  --panel: #1c212d;
+  --panel2: #232a3a;
+  --border: #3b4258;
+  --text: #ffffff;
+  --muted: #cbd5e1;
+  --accent: #a855f7;
+  --accent2: #6366f1;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --red: #ef4444;
+  --radius: 14px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(168,85,247,0.18), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(99,102,241,0.12), transparent);
+}
+.container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+/* Header */
+header { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 24px; gap: 12px; text-align: center; }
+.logo { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 52px; height: 52px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; box-shadow: 0 4px 20px rgba(168,85,247,0.4);
+}
+.logo h1 {
+  font-size: 40px; font-weight: 800; letter-spacing: 1px;
+  color: #ffffff;
+  text-shadow:
+    0 1px 0 #d1d1d6,
+    0 2px 0 #babae0,
+    0 3px 0 #a3a3c8,
+    0 4px 0 #8c8cb0,
+    0 5px 0 #757598,
+    0 6px 10px rgba(0,0,0,0.7),
+    0 10px 24px rgba(0,0,0,0.55);
+  line-height: 1.15;
+}
+.logo h1::before { content: "🎵 "; }
+.logo h1::after { content: " 🤖"; }
+.logo p { color: #f1f5f9; font-size: 15px; font-weight: 500; margin-top: 4px; }
+.status-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--panel); border: 1px solid var(--border);
+  padding: 9px 18px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #ffffff;
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); }
+.dot.on { background: var(--green); box-shadow: 0 0 10px var(--green); }
+
+/* Layout */
+.layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px;
+}
+.card h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+.card h2 .ico { color: #c084fc; }
+
+label { display: block; font-size: 14px; font-weight: 600; color: #f1f5f9; margin: 16px 0 7px; }
+input[type="text"], textarea, select, input[type="number"] {
+  width: 100%; background: var(--panel2); border: 1px solid var(--border);
+  color: #ffffff; border-radius: 8px; padding: 12px 14px; font-size: 15px; font-weight: 500;
+  font-family: inherit; transition: border-color 0.15s;
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: #c084fc; box-shadow: 0 0 0 2px rgba(168,85,247,0.25); }
+textarea { resize: vertical; min-height: 95px; line-height: 1.5; }
+textarea.lyrics { min-height: 220px; font-size: 15px; }
+
+.opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Generate button */
+.generate-btn {
+  margin-top: 22px; width: 100%; border: none; cursor: pointer;
+  padding: 16px; border-radius: 10px; font-size: 17px; font-weight: 700; letter-spacing: 0.3px;
+  color: #ffffff; background: linear-gradient(135deg, var(--accent), var(--accent2));
+  box-shadow: 0 4px 20px rgba(168,85,247,0.4); transition: transform 0.1s, opacity 0.2s;
+}
+.generate-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.generate-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Progress */
+.progress-wrap { display: none; margin-top: 16px; }
+.progress-wrap.active { display: block; }
+.bar { height: 8px; background: var(--panel2); border-radius: 99px; overflow: hidden; }
+.bar-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 99px; transition: width 0.3s;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+.status-text { margin-top: 10px; font-size: 14px; color: #f1f5f9; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.spinner {
+  width: 15px; height: 15px; border: 2px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Results */
+.result-item {
+  background: var(--panel2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin-bottom: 14px;
+}
+.result-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.result-title { font-weight: 700; font-size: 16px; color: #ffffff; }
+.delete-btn {
+  background: #7f1d1d; color: #ffffff; border: none; border-radius: 8px;
+  padding: 6px 12px; font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: background 0.2s;
+}
+.delete-btn:hover { background: #b91c1c; }
+.result-meta { font-size: 13px; color: #cbd5e1; font-weight: 500; display: flex; gap: 14px; flex-wrap: wrap; }
+.result-meta span { display: inline-flex; align-items: center; gap: 4px; }
+audio { width: 100%; margin-top: 10px; height: 42px; }
+audio::-webkit-media-controls-panel { background: var(--panel2); }
+.visualizer-wrap {
+  position: relative; margin-top: 10px; border-radius: 10px; overflow: hidden;
+  background: linear-gradient(180deg, #14161f, #0b0c12);
+  border: 1px solid var(--border); box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
+}
+.visualizer-wrap canvas { display: block; width: 100%; height: 90px; }
+.vis-label {
+  position: absolute; top: 6px; left: 10px; font-size: 10.5px; color: var(--muted);
+  letter-spacing: 0.6px; text-transform: uppercase; opacity: 0.8;
+  pointer-events: none;
+}
+.wmp-wrap {
+  position: relative; margin-top: 10px; border-radius: 10px; overflow: hidden;
+  background: linear-gradient(180deg, #0f1020, #07080d);
+  border: 1px solid var(--border); box-shadow: inset 0 0 40px rgba(0,0,0,0.7);
+  height: 130px;
+}
+.wmp-wrap canvas { display: block; width: 100%; height: 100%; }
+.wmp-label {
+  position: absolute; top: 6px; left: 10px; font-size: 10.5px; color: var(--muted);
+  letter-spacing: 0.6px; text-transform: uppercase; opacity: 0.8;
+  pointer-events: none; z-index: 2;
+}
+.motivation {
+  position: absolute; left: 0; right: 0; bottom: 14px; text-align: center;
+  font-size: 17px; font-weight: 700; letter-spacing: 1px; z-index: 3;
+  background: linear-gradient(90deg, #22c55e, #a855f7, #6366f1);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 30px rgba(168,85,247,0.4);
+  opacity: 0; transform: scale(0.6); pointer-events: none;
+  transition: opacity 0.25s, transform 0.15s;
+}
+.motivation.on { opacity: 1; transform: scale(1); }
+.lyrics-preview {
+  margin-top: 10px; font-size: 14px; color: #e2e8f0; line-height: 1.6;
+  white-space: pre-wrap; max-height: 120px; overflow-y: auto;
+  border-top: 1px solid var(--border); padding-top: 10px;
+}
+.empty-state { text-align: center; padding: 60px 20px; color: #cbd5e1; }
+.empty-state .big-ico { font-size: 52px; margin-bottom: 14px; opacity: 0.5; }
+.empty-state p { font-size: 15px; font-weight: 500; }
+.hidden { display: none !important; }
+
+/* Corner brand logo (JMB) */
+#cornerLogo {
+  position: fixed; top: 14px; left: 14px; z-index: 1000;
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(15,15,25,0.65); border: 1px solid var(--border);
+  padding: 8px 14px 8px 8px; border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+#cornerLogo .brand-badge {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: radial-gradient(circle at 32% 30%, #ffb347, #f97316 55%, #c2410c);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800; color: #ffffff; letter-spacing: 1px;
+  box-shadow: 0 2px 10px rgba(249,115,22,0.5);
+  overflow: hidden;
+}
+#cornerLogo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+#cornerLogo .brand-name { font-size: 14px; font-weight: 700; color: #ffffff; }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--panel2); border: 1px solid var(--border); padding: 14px 22px;
+  border-radius: 10px; font-size: 15px; font-weight: 500; color: #ffffff; transition: transform 0.3s; z-index: 999;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5); max-width: 90vw;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Reference audio upload (Remix) */
+.ref-zone {
+  margin-top: 16px; border: 1px dashed var(--border); border-radius: 10px;
+  padding: 12px; background: rgba(255,255,255,0.02);
+}
+.ref-zone.active { border-color: var(--accent); background: rgba(168,85,247,0.06); }
+.ref-zone .ref-title { font-size: 14px; font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.ref-file {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.ref-file input[type="file"] {
+  display: none;
+}
+.ref-file label.file-btn {
+  background: var(--panel2); border: 1px solid var(--border); color: #ffffff;
+  padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.ref-file label.file-btn:hover { border-color: var(--accent); }
+.ref-file .ref-name { font-size: 13.5px; color: #e2e8f0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+.ref-file .clear-ref { cursor: pointer; color: #cbd5e1; font-size: 14px; font-weight: 500; background: none; border: none; }
+.ref-file .clear-ref:hover { color: var(--red); }
+.ref-preview {
+  display: none; margin-top: 10px;
+}
+.ref-preview.show { display: block; }
+.ref-preview audio { width: 100%; height: 36px; margin-top: 0; }
+.ref-strength { margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+.ref-strength label { margin: 0; font-size: 14px; font-weight: 600; color: #f1f5f9; flex-shrink: 0; }
+.ref-strength input[type="range"] { flex: 1; accent-color: var(--accent); }
+.mode-toggle { display: flex; gap: 8px; margin-bottom: 4px; }
+.mode-toggle button {
+  flex: 1; padding: 11px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--panel2); color: #e2e8f0; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.mode-toggle button.on { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border-color: transparent; }
+.mode-hint { font-size: 13px; color: #cbd5e1; line-height: 1.55; margin-top: 8px; }
+
+/* Style tools (below results) */
+.tools-card { margin-top: 20px; }
+.style-chips {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+}
+.chip {
+  padding: 7px 13px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--panel2); color: #e2e8f0; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; user-select: none;
+}
+.chip:hover { border-color: var(--accent); }
+.chip.on {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; border-color: transparent; box-shadow: 0 2px 12px rgba(168,85,247,0.35);
+}
+.chip-row-label { font-size: 13px; font-weight: 600; color: #f1f5f9; margin: 12px 0 2px; display: block; }
+.preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.preset-btn {
+  background: linear-gradient(135deg, rgba(249,115,22,0.25), rgba(168,85,247,0.25));
+  border: 1px solid var(--border); color: #ffffff; border-radius: 8px;
+  padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.preset-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+.lyric-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.lyric-btn {
+  background: var(--panel2); border: 1px solid var(--border); color: #e2e8f0;
+  border-radius: 7px; padding: 6px 11px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.lyric-btn:hover { border-color: var(--accent); }
+.chip-row { margin-bottom: 4px; }
+
+/* Visual effects window */
+.fx-card { margin-top: 20px; }
+.fx-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.fx-btn {
+  flex: 1; min-width: 120px; padding: 10px 8px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--panel2); color: #e2e8f0;
+  font-size: 13.5px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.fx-btn:hover { border-color: var(--accent); }
+.fx-btn.on {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; border-color: transparent; box-shadow: 0 2px 14px rgba(168,85,247,0.35);
+}
+.fx-wrap {
+  position: relative; border-radius: 12px; overflow: hidden;
+  background: linear-gradient(180deg, #12141f, #0a0b12);
+  border: 1px solid var(--border); box-shadow: inset 0 0 40px rgba(0,0,0,0.65);
+}
+.fx-wrap canvas { display: block; width: 100%; height: 200px; }
+.fx-status {
+  position: absolute; top: 8px; left: 12px; font-size: 11px; color: #8b93a7;
+  letter-spacing: 0.6px; text-transform: uppercase; opacity: 0.85; pointer-events: none; z-index: 2;
+}
+</style>
+</head>
+<body>
+<div id="cornerLogo" title="JMB">
+  <div class="brand-badge" id="brandBadge">JMB</div>
+  <span class="brand-name">JMB</span>
+</div>
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎵</div>
+      <div>
+        <h1>MelodyFlow Studio</h1>
+        <p>Generación de música con IA · local y gratuita</p>
+      </div>
+    </div>
+    <div class="status-pill">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Comprobando servidor…</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Left: Inputs -->
+    <div>
+      <div class="card">
+        <h2><span class="ico">🎤</span> Prompt / Descripción</h2>
+        <input type="text" id="prompt" placeholder="Ej: canción pop alegre con ritmo contagioso y energía veraniega" maxlength="512">
+        <label>🎶 Letra (lyrics)</label>
+        <textarea id="lyrics" class="lyrics" placeholder="Escribe aquí la letra de tu canción...&#10;&#10;[Verso 1]&#10;...&#10;&#10;Sugerencia: escribe [Instrumental] para una canción instrumental."></textarea>
+        <div class="lyric-tools">
+          <button class="lyric-btn" data-lyric-template="verse">➕ Verso</button>
+          <button class="lyric-btn" data-lyric-template="chorus">➕ Estribillo</button>
+          <button class="lyric-btn" data-lyric-template="bridge">➕ Puente</button>
+          <button class="lyric-btn" data-lyric-template="solo">🎸 Solo</button>
+          <button class="lyric-btn" data-lyric-template="fade">🌅 Fade out</button>
+        </div>
+
+        <label>⚙️ Opciones</label>
+        <div class="opt-grid">
+          <div>
+            <label>Duración (seg)</label>
+            <select id="duration">
+              <option value="-1">Auto</option>
+              <option value="20">20 s</option>
+              <option value="30" selected>30 s</option>
+              <option value="45">45 s</option>
+              <option value="60">60 s</option>
+              <option value="90">90 s</option>
+              <option value="120">2 min</option>
+            </select>
+          </div>
+          <div>
+            <label>Pasos (calidad)</label>
+            <select id="steps">
+              <option value="8" selected>8 · turbo rápido</option>
+              <option value="16">16 · más detalle</option>
+              <option value="32">32 · máxima</option>
+              <option value="48">48 · extrema</option>
+            </select>
+          </div>
+          <div>
+            <label>Guidance</label>
+            <select id="guidance">
+              <option value="5.0">5.0</option>
+              <option value="6.0">6.0</option>
+              <option value="7.0" selected>7.0</option>
+              <option value="8.0">8.0</option>
+              <option value="9.0">9.0</option>
+            </select>
+          </div>
+          <div>
+            <label>ADG (claridad)</label>
+            <select id="adg">
+              <option value="true" selected>ON · separa voces/instrumentos</option>
+              <option value="false">OFF</option>
+            </select>
+          </div>
+          <div>
+            <label>BPM</label>
+            <select id="bpm">
+              <option value="">Auto</option>
+              <option value="60">60</option>
+              <option value="80">80</option>
+              <option value="90">90</option>
+              <option value="100">100</option>
+              <option value="120">120</option>
+              <option value="140">140</option>
+              <option value="160">160</option>
+            </select>
+          </div>
+        </div>
+
+        <label style="margin-top:16px; display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="instrumental" style="width:16px;height:16px;accent-color:var(--accent);"> 🎹 Solo instrumental (sin voces)
+        </label>
+
+        <label style="margin-top:16px">🎛️ Modo</label>
+        <div class="mode-toggle">
+          <button id="modeText" class="on" data-mode="text">✨ Crear desde cero</button>
+          <button id="modeRemix" data-mode="remix">🎧 Remix / Cover (transforma una canción)</button>
+        </div>
+
+        <div class="ref-zone" id="refZone">
+          <div class="ref-title">🎵 Canción base (se transformará)</div>
+          <div class="ref-file">
+            <label class="file-btn" for="refInput">📁 Elegir audio</label>
+            <input type="file" id="refInput" accept="audio/*,.mp3,.wav,.flac,.ogg,.m4a,.aac">
+            <span class="ref-name" id="refName"></span>
+            <button class="clear-ref" id="clearRef" title="Quitar archivo">✕ quitar</button>
+          </div>
+          <div class="ref-preview" id="refPreview">
+            <audio id="refAudio" controls></audio>
+          </div>
+          <div class="ref-strength">
+            <label>Intensidad del estilo:</label>
+            <input type="range" id="refStrength" min="0.2" max="1.0" step="0.05" value="0.7">
+            <span id="refStrengthVal" style="font-size:12px;color:var(--muted)">70%</span>
+          </div>
+          <p class="mode-hint">Sube una canción como base (Remix/Cover): la IA la transforma siguiendo tu prompt y letra. 💡 Intensidad baja (20-30%) = estilo influyente; alta (80-100%) = cover cercano al original. ⚠️ Usa solo audio propio o sin derechos.</p>
+        </div>
+
+        <button class="generate-btn" id="genBtn">🎵 Generar música</button>
+
+        <div class="progress-wrap" id="progress">
+          <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+          <div class="status-text"><span class="spinner"></span><span id="statusMsg">Generando… esto puede tardar varios minutos</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Results -->
+    <div>
+      <div class="card">
+        <h2><span class="ico">🎧</span> Resultados</h2>
+        <div id="results">
+          <div class="empty-state">
+            <div class="big-ico">🎶</div>
+            <p>Las canciones generadas aparecerán aquí con su reproductor</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Style tools -->
+      <div class="card tools-card">
+        <h2><span class="ico">🎛️</span> Herramientas de estilo</h2>
+        <label class="chip-row-label">🧩 Plantillas de sonido (presets)</label>
+        <div class="preset-row" id="presetRow"></div>
+        <p class="mode-hint">Un clic rellena prompt + parámetros probados. Después puedes ajustarlos.</p>
+
+        <label class="chip-row-label">🎼 Género / Estilo</label>
+        <div class="style-chips chip-row" id="genreChips"></div>
+
+        <label class="chip-row-label">🎭 Mood</label>
+        <div class="style-chips chip-row" id="moodChips"></div>
+
+        <label class="chip-row-label">🎸 Instrumentos principales (HD)</label>
+        <div class="style-chips chip-row" id="instrumentChips"></div>
+
+        <label class="chip-row-label">🗣️ Voces</label>
+        <div class="style-chips chip-row" id="vocalChips"></div>
+        <p class="mode-hint">Haz clic para activar. Se añaden a tu prompt automáticamente.</p>
+      </div>
+
+      <!-- Visual effects window -->
+      <div class="card fx-card">
+        <h2><span class="ico">✨</span> Efectos visuales</h2>
+        <div class="fx-toolbar">
+          <button class="fx-btn" data-fx="bars">📊 Barras 3D</button>
+          <button class="fx-btn" data-fx="wave">🌊 Waveform</button>
+          <button class="fx-btn" data-fx="pulse">💫 Pulsos</button>
+          <button class="fx-btn" data-fx="aurora">🌈 Aurora</button>
+          <button class="fx-btn" data-fx="vinyl">💿 Vinilo</button>
+        </div>
+        <div class="fx-wrap">
+          <span class="fx-status">Elige un efecto · reproduce una canción</span>
+          <canvas id="fxCanvas" width="640" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API_BASE = "http://127.0.0.1:7861";
+
+const $ = id => document.getElementById(id);
+const genBtn = $("genBtn");
+const resultsEl = $("results");
+const progressEl = $("progress");
+const barFill = $("barFill");
+
+/* ---------- Style tools ---------- */
+const GENRES = ["Auto", "Pop", "Rock", "Electronic", "Hip-Hop", "R&B", "Jazz", "Classical", "Ambient", "Lo-Fi", "Reggaeton", "Folk", "Cinematic"];
+const MOODS = ["Auto", "Alegre", "Oscuro", "Épico", "Relajante", "Melancólico", "Energético", "Místico", "Romántico", "Tenso"];
+const INSTRUMENTS = ["Auto", "Guitarra", "Piano", "Sintetizadores", "Batería", "Bajo", "Violín", "Saxofón", "Arpa", "Órgano", "Cuerdas", "Percusión étnica"];
+const VOCALS = ["Auto", "Ninguna (instrumental)", "Femenina", "Masculina", "Coro", "Rap"];
+
+const styleState = { genre: "Auto", mood: "Auto", instrument: "Auto", vocals: "Auto" };
+
+function buildChips(containerId, values, key) {
+  const container = $(containerId);
+  container.innerHTML = "";
+  values.forEach(v => {
+    const b = document.createElement("button");
+    b.className = "chip" + (v === "Auto" ? " on" : "");
+    b.textContent = v;
+    b.addEventListener("click", () => {
+      styleState[key] = v;
+      container.querySelectorAll(".chip").forEach(c => c.classList.remove("on"));
+      b.classList.add("on");
+    });
+    container.appendChild(b);
+  });
+}
+
+buildChips("genreChips", GENRES, "genre");
+buildChips("moodChips", MOODS, "mood");
+buildChips("instrumentChips", INSTRUMENTS, "instrument");
+buildChips("vocalChips", VOCALS, "vocals");
+
+// Sound presets: fill prompt + params with tested combos for clean, clear results.
+const PRESETS = [
+  {
+    name: "🎹 Balada íntima",
+    prompt: "piano ballad, intimate atmosphere, soft strings, female vocal, emotional, building to powerful chorus",
+    lyrics: "",
+    steps: 8, guidance: 8, bpm: 70, adg: true, instrumental: false,
+  },
+  {
+    name: "🎸 Rock limpio",
+    prompt: "rock, clean electric guitar, driving drums, male vocal, punchy, alternative rock",
+    lyrics: "",
+    steps: 8, guidance: 8, bpm: 120, adg: true, instrumental: false,
+  },
+  {
+    name: "🎧 Lo-Fi relajado",
+    prompt: "lo-fi hip hop, warm piano, soft beat, vinyl crackle, cozy, nostalgic",
+    lyrics: "",
+    steps: 8, guidance: 7, bpm: 80, adg: true, instrumental: true,
+  },
+  {
+    name: "🎻 Cinemático épico",
+    prompt: "cinematic orchestral, strings, epic percussion, grand, sweeping, emotional",
+    lyrics: "",
+    steps: 8, guidance: 8, bpm: 100, adg: true, instrumental: true,
+  },
+  {
+    name: "💃 Pop pegadizo",
+    prompt: "pop, dance pop, catchy synth, bright, uplifting, female vocal, polished production",
+    lyrics: "",
+    steps: 8, guidance: 7, bpm: 118, adg: true, instrumental: false,
+  },
+  {
+    name: "🌙 Ambient dormir",
+    prompt: "ambient, soft pads, slow tempo, meditative, ethereal, no percussion",
+    lyrics: "",
+    steps: 8, guidance: 6, bpm: 60, adg: true, instrumental: true,
+  },
+  {
+    name: "🎷 Jazz suave",
+    prompt: "jazz, saxophone, upright bass, brushes drums, smooth, late night, intimate",
+    lyrics: "",
+    steps: 8, guidance: 7, bpm: 90, adg: true, instrumental: true,
+  },
+  {
+    name: "🎹 Piano solo",
+    prompt: "solo piano, expressive, melancholic, slow tempo, clear and warm tone",
+    lyrics: "",
+    steps: 8, guidance: 7, bpm: 70, adg: true, instrumental: true,
+  },
+  {
+    name: "⚡ Synthwave 80s",
+    prompt: "80s synthwave, analog synths, driving bass, retro, neon, nostalgic",
+    lyrics: "",
+    steps: 8, guidance: 8, bpm: 110, adg: true, instrumental: false,
+  },
+  {
+    name: "🎤 Reggaeton",
+    prompt: "reggaeton, urban, dembow rhythm, catchy, energetic, spanish vocal",
+    lyrics: "",
+    steps: 8, guidance: 7, bpm: 92, adg: true, instrumental: false,
+  },
+];
+
+function buildPresets() {
+  const row = $("presetRow");
+  PRESETS.forEach(p => {
+    const b = document.createElement("button");
+    b.className = "preset-btn";
+    b.textContent = p.name;
+    b.addEventListener("click", () => {
+      $("prompt").value = p.prompt;
+      $("lyrics").value = p.lyrics;
+      $("steps").value = p.steps;
+      $("guidance").value = p.guidance;
+      $("bpm").value = p.bpm;
+      $("adg").value = p.adg ? "true" : "false";
+      $("instrumental").checked = p.instrumental;
+      // reset style chips to Auto
+      styleState.genre = "Auto"; styleState.mood = "Auto"; styleState.instrument = "Auto"; styleState.vocals = "Auto";
+      ["genreChips", "moodChips", "instrumentChips", "vocalChips"].forEach(cid => {
+        $(cid).querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.textContent === "Auto"));
+      });
+      toast("🎛️ Plantilla aplicada: " + p.name);
+    });
+    row.appendChild(b);
+  });
+}
+
+buildPresets();
+
+// Lyric structure helpers: insert model-friendly tags to separate vocals/instruments.
+const LYRIC_TEMPLATES = {
+  verse: "[Verse 1]\nEscribe aquí tu primera estrofa\n\n[Verse 2]\nEscribe aquí la segunda estrofa",
+  chorus: "[Chorus - anthemic]\nEscribe aquí tu estribillo",
+  bridge: "[Bridge - whispered]\nEscribe aquí el puente",
+  solo: "[Instrumental]\n\n[Guitar Solo - expressive]",
+  fade: "[Outro - fade out]",
+};
+
+document.querySelectorAll(".lyric-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const tpl = LYRIC_TEMPLATES[btn.dataset.lyricTemplate];
+    const box = $("lyrics");
+    if (!box.value) box.value = tpl;
+    else box.value = box.value.replace(/\n*$/, "") + "\n\n" + tpl;
+    box.focus();
+    toast("🎶 Sección añadida a la letra");
+  });
+});
+
+/* ---------- Server status ---------- */
+let isGenerating = false;
+async function checkHealth() {
+  try {
+    const r = await fetch(API_BASE + "/health", { signal: AbortSignal.timeout(4000) });
+    if (r.ok) {
+      $("statusDot").classList.add("on");
+      $("statusText").textContent = "Servidor conectado";
+      if (!isGenerating) genBtn.disabled = false;
+      return true;
+    }
+  } catch (e) {}
+  $("statusDot").classList.remove("on");
+  $("statusText").textContent = "Servidor desconectado";
+  genBtn.disabled = true;
+  return false;
+}
+
+/* ---------- Toast ---------- */
+let toastTimer;
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 4000);
+}
+
+/* ---------- Generation ---------- */
+let animId = null;
+function startProgress() {
+  progressEl.classList.add("active");
+  barFill.style.width = "8%";
+  const start = Date.now();
+  cancelAnimationFrame(animId);
+  function tick() {
+    const elapsed = (Date.now() - start) / 1000;
+    // fake gradual fill, caps at 90% until real completion
+    const pct = Math.min(90, 8 + elapsed * 0.15);
+    barFill.style.width = pct + "%";
+    const mins = Math.floor(elapsed / 60);
+    const secs = Math.floor(elapsed % 60);
+    $("statusMsg").textContent =
+      "Generando… " + (mins ? mins + "m " : "") + secs + "s · puede tardar varios minutos en CPU";
+    animId = requestAnimationFrame(tick);
+  }
+  tick();
+}
+function stopProgress(done) {
+  cancelAnimationFrame(animId);
+  barFill.style.width = done ? "100%" : "8%";
+  setTimeout(() => { progressEl.classList.remove("active"); }, 600);
+}
+
+// Short success chime using the Web Audio API (no external file needed).
+let _chimeCtx = null;
+function playChime() {
+  try {
+    if (!_chimeCtx) _chimeCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_chimeCtx.state === "suspended") _chimeCtx.resume();
+    const now = _chimeCtx.currentTime;
+    const notes = [660, 880, 990]; // A5, A6, B6
+    notes.forEach((freq, i) => {
+      const osc = _chimeCtx.createOscillator();
+      const gain = _chimeCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      const t = now + i * 0.15;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.25, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+      osc.connect(gain).connect(_chimeCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.65);
+    });
+  } catch (e) {}
+}
+
+async function generate() {
+  const basePrompt = $("prompt").value.trim();
+  const lyrics = $("lyrics").value.trim();
+  if (!basePrompt && !lyrics) {
+    toast("Escribe un prompt o una letra para generar");
+    return;
+  }
+
+  const isRemix = currentMode === "remix";
+  if (isRemix && !uploadedRefPath) {
+    toast("Sube primero un audio de referencia para el remix");
+    return;
+  }
+
+  // Build a richer caption from the selected style chips
+  const styleTags = [];
+  if (styleState.genre !== "Auto") styleTags.push(styleState.genre);
+  if (styleState.mood !== "Auto") styleTags.push(styleState.mood);
+  if (styleState.instrument !== "Auto") styleTags.push(`${styleState.instrument} en HD`);
+  const prompt = [basePrompt, ...styleTags].filter(Boolean).join(", ");
+
+  genBtn.disabled = true;
+  isGenerating = true;
+  startProgress();
+
+  const body = {
+    prompt,
+    lyrics,
+    task_type: isRemix ? "cover" : "text2music",
+    duration: isRemix ? -1 : parseInt($("duration").value, 10),
+    inference_steps: parseInt($("steps").value, 10),
+    guidance_scale: parseFloat($("guidance").value),
+    use_adg: $("adg").value === "true",
+    instrumental: $("instrumental").checked,
+    bpm: $("bpm").value ? parseInt($("bpm").value, 10) : null,
+    batch_size: 1,
+    audio_format: "flac",
+  };
+  if (isRemix) {
+    body.src_audio = uploadedRefPath;
+    body.audio_cover_strength = parseFloat($("refStrength").value);
+  }
+
+  if (styleState.vocals === "Ninguna (instrumental)") {
+    if (!lyrics) body.lyrics = "[Instrumental]";
+  } else if (styleState.vocals === "Rap") {
+    body.vocal_language = "en";
+  }
+
+  try {
+    const resp = await fetch(API_BASE + "/release_task", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30 * 1000),
+    });
+    const json = await resp.json();
+    if (!resp.ok || json.code !== 200) {
+      throw new Error(json.error || json.detail || "Error en la generación");
+    }
+    const taskId = json.data && json.data.task_id;
+    if (!taskId) throw new Error("No se recibió task_id");
+
+    // Persist pending task so a page refresh / tab close doesn't lose it.
+    const pending = JSON.parse(localStorage.getItem("melodyflow_pending") || "[]");
+    if (!pending.includes(taskId)) pending.push(taskId);
+    localStorage.setItem("melodyflow_pending", JSON.stringify(pending));
+
+    // Poll /query_result until the task finishes.
+    let audios = null;
+    for (let i = 0; i < 6000; i++) {
+      const qr = await fetch(API_BASE + "/query_result", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task_id_list: [taskId] }),
+        signal: AbortSignal.timeout(30 * 1000),
+      });
+      const qj = await qr.json();
+      const item = (qj.data || []).find(x => x.task_id === taskId);
+      if (item && item.status === 1) {
+        try {
+          audios = JSON.parse(item.result);
+        } catch (e) { audios = []; }
+        if (Array.isArray(audios)) break;
+      } else if (item && (item.status === -1 || item.status === 2)) {
+        throw new Error("La generación falló en el servidor");
+      }
+      await new Promise(r => setTimeout(r, 20000));
+    }
+    if (!audios || !audios.length) throw new Error("La generación no terminó (agotado el tiempo)");
+
+    // Task done -> remove from pending list.
+    const still = JSON.parse(localStorage.getItem("melodyflow_pending") || "[]");
+    localStorage.setItem("melodyflow_pending", JSON.stringify(still.filter(id => id !== taskId)));
+
+    renderResults(audios.map(a => ({ ...a, task_id: taskId })));
+    stopProgress(true);
+    toast("🎉 Música generada correctamente");
+    playChime();
+  } catch (err) {
+    stopProgress(false);
+    toast("❌ " + err.message);
+  } finally {
+    isGenerating = false;
+    genBtn.disabled = false;
+    checkHealth();
+  }
+}
+
+// On load, recover any tasks that were still pending from a previous session.
+async function recoverPending() {
+  let pending;
+  try {
+    pending = JSON.parse(localStorage.getItem("melodyflow_pending") || "[]");
+  } catch (e) { return; }
+  if (!Array.isArray(pending) || !pending.length) return;
+
+  const qr = await fetch(API_BASE + "/query_result", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task_id_list: pending }),
+  });
+  const qj = await qr.json();
+  const done = (qj.data || []).filter(x => x.status === 1);
+  if (done.length) {
+    let audios = [];
+    for (const item of done) {
+      try {
+        const parsed = JSON.parse(item.result);
+        parsed.forEach(a => { a.task_id = item.task_id; });
+        audios = audios.concat(parsed);
+      } catch (e) {}
+    }
+    if (audios.length) {
+      renderResults(audios);
+      toast("📂 Recuperada música generada anteriormente");
+    }
+  }
+  localStorage.setItem("melodyflow_pending", JSON.stringify(
+    pending.filter(id => !done.some(x => x.task_id === id))
+  ));
+}
+
+// Restore previously generated songs from the server's result cache.
+async function loadHistory() {
+  try {
+    const r = await fetch(API_BASE + "/get_history", {
+      signal: AbortSignal.timeout(8000),
+    });
+    const j = await r.json();
+    if (!r.ok || j.code !== 200) return;
+    const items = j.data || [];
+    let audios = [];
+    for (const it of items) {
+      const res = it.result;
+      if (Array.isArray(res)) {
+        res.forEach(a => { a.task_id = it.task_id; });
+        audios = audios.concat(res);
+      }
+      else if (res) {
+        try {
+          const parsed = JSON.parse(res);
+          parsed.forEach(a => { a.task_id = it.task_id; });
+          audios = audios.concat(parsed);
+        } catch (e) {}
+      }
+    }
+    if (audios.length) {
+      renderResults(audios);
+      if (items.length) toast("📂 Historial cargado: " + items.length + " canción" + (items.length > 1 ? "es" : ""));
+    }
+  } catch (e) {}
+}
+
+// Load the brand logo (logo.png next to index.html) into the corner badge.
+// Falls back to the built-in "JMB" orange badge if the file isn't there yet.
+function loadBrandLogo() {
+  const img = new Image();
+  img.onload = () => {
+    const badge = document.getElementById("brandBadge");
+    badge.innerHTML = "";
+    badge.appendChild(img);
+    const name = document.querySelector("#cornerLogo .brand-name");
+    if (name) name.textContent = "";
+  };
+  img.onerror = () => {}; // keep the default orange JMB badge
+  img.src = "logo.png";
+}
+
+/* ---------- Render results ---------- */
+function fmtLang(l) {
+  const m = { en: "Inglés", es: "Español", ja: "Japonés", zh: "Chino", unknown: "Auto" };
+  return m[l] || l || "Auto";
+}
+
+function renderResults(audios) {
+  // clean up previous visualizers before clearing the DOM
+  for (const audioEl of visRegistry.keys()) teardownVisualizer(audioEl);
+  resultsEl.innerHTML = "";
+  audios.forEach((a, idx) => {
+    const m = a.metas || {};
+    const url = (a.url || a.file || "").startsWith("http")
+      ? (a.url || a.file)
+      : API_BASE + (a.url || a.file);
+    const meta = [];
+    if (a.duration || m.duration) meta.push(`⏱ ${Math.round(a.duration || m.duration)} s`);
+    if (a.bpm || m.bpm) meta.push(`🎹 ${a.bpm || m.bpm} BPM`);
+    if (a.keyscale || m.keyscale) meta.push(`🎼 ${a.keyscale || m.keyscale}`);
+    if (a.seed && a.seed >= 0) meta.push(`🌱 seed ${a.seed}`);
+    if (a.vocal_language) meta.push(`🗣 ${fmtLang(a.vocal_language)}`);
+
+    const div = document.createElement("div");
+    div.className = "result-item";
+    div.innerHTML = `
+      <div class="result-head">
+        <span class="result-title">🎵 Canción ${idx + 1}</span>
+        <button class="delete-btn" data-task-id="${escapeHtml(a.task_id || "")}" title="Eliminar esta canción">🗑 Eliminar</button>
+      </div>
+      <div class="result-meta">${meta.length ? meta.map(m => `<span>${m}</span>`).join("") : "<span>—</span>"}</div>
+      <audio id="audio-${idx}" controls crossorigin="anonymous" src="${url}"></audio>
+      <div class="visualizer-wrap">
+        <span class="vis-label">✨ Visualizador</span>
+        <canvas data-for="audio-${idx}" width="600" height="90"></canvas>
+      </div>
+      <div class="wmp-wrap">
+        <span class="wmp-label">🎧 Melody Player</span>
+        <canvas data-mood-for="audio-${idx}" width="600" height="130"></canvas>
+        <div class="motivation" data-motivation-for="audio-${idx}"></div>
+      </div>
+      ${a.lyrics ? `<div class="lyrics-preview">${escapeHtml(a.lyrics)}</div>` : ""}
+    `;
+    resultsEl.appendChild(div);
+
+    const delBtn = div.querySelector(".delete-btn");
+    if (delBtn) {
+      delBtn.addEventListener("click", async () => {
+        const taskId = delBtn.dataset.taskId;
+        if (!taskId) { toast("❌ Esta canción no se puede borrar"); return; }
+        if (!confirm("¿Eliminar esta canción?")) return;
+        try {
+          const dr = await fetch(API_BASE + "/delete_result", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task_id: taskId }),
+          });
+          const dj = await dr.json();
+          if (!dr.ok || dj.code !== 200) throw new Error(dj.error || dj.detail || "Error al borrar");
+          teardownVisualizer(div.querySelector("audio"));
+          div.remove();
+          toast("🗑 Canción eliminada");
+        } catch (e) {
+          toast("❌ " + e.message);
+        }
+      });
+    }
+
+    const audioEl = div.querySelector(`#audio-${idx}`);
+    const canvasEl = div.querySelector(`canvas[data-for="audio-${idx}"]`);
+    const moodCanvas = div.querySelector(`canvas[data-mood-for="audio-${idx}"]`);
+    const motivationEl = div.querySelector(`[data-motivation-for="audio-${idx}"]`);
+    if (audioEl && canvasEl) setupVisualizer(audioEl, canvasEl, moodCanvas, motivationEl);
+  });
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/* ---------- Visualizer (spectrum analyzer + Windows Media Player style) ---------- */
+const visRegistry = new Map();
+
+const MOTIVATION = [
+  "Tú puedes", "Sigue así", "Eres imparable", "A por todas", "Brilla",
+  "No te rindas", "Cada día cuesta", "La música te mueve", "Vuela alto",
+  "Hecho a tu medida", "Suena genial", "Sigue creando", "Esto solo es el principio",
+];
+
+function setupVisualizer(audioEl, canvas, moodCanvas, motivationEl) {
+  const ctx2d = canvas.getContext("2d");
+  const mctx = moodCanvas ? moodCanvas.getContext("2d") : null;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const src = ctx.createMediaElementSource(audioEl);
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 256;
+  analyser.smoothingTimeConstant = 0.82;
+  src.connect(analyser);
+  analyser.connect(ctx.destination);
+
+  const freqData = new Uint8Array(analyser.frequencyBinCount);
+  const BARS = 48;
+
+  const COLORS = [];
+  for (let i = 0; i < BARS; i++) {
+    const hue = (i / BARS) * 300; // barrido arcoíris (púrpura→rojo)
+    COLORS.push(`hsl(${hue}, 95%, 60%)`);
+  }
+
+  function resize(c, h) {
+    const rect = c.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    c.width = Math.max(1, Math.round(rect.width * dpr));
+    c.height = Math.max(1, Math.round(rect.height * dpr));
+  }
+  resize(canvas, 90);
+  if (moodCanvas) resize(moodCanvas, 130);
+  window.addEventListener("resize", () => {
+    resize(canvas, 90);
+    if (moodCanvas) resize(moodCanvas, 130);
+  });
+
+  // ---- WMP-style ambient particles + beat-driven motivational phrase ----
+  const particles = [];
+  for (let i = 0; i < 70; i++) {
+    particles.push({
+      x: Math.random(), y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 2.5 + 0.8,
+      hue: Math.random() * 300,
+    });
+  }
+  let beatEnergy = 0;
+  let lastPhrase = 0;
+  let currentPhrase = MOTIVATION[0];
+  let phraseTimer = null;
+
+  function pickPhrase() {
+    let p;
+    do { p = MOTIVATION[Math.floor(Math.random() * MOTIVATION.length)]; }
+    while (p === currentPhrase);
+    currentPhrase = p;
+    if (motivationEl) motivationEl.textContent = p;
+  }
+  if (motivationEl) {
+    motivationEl.textContent = currentPhrase;
+    motivationEl.addEventListener("animationend", () => motivationEl.classList.remove("on"));
+  }
+
+  function showPhrase() {
+    if (!motivationEl) return;
+    motivationEl.classList.remove("on");
+    // force reflow to restart the pulse
+    void motivationEl.offsetWidth;
+    motivationEl.classList.add("on");
+    if (phraseTimer) clearTimeout(phraseTimer);
+    phraseTimer = setTimeout(() => {
+      motivationEl.classList.remove("on");
+    }, 900);
+  }
+
+  let raf = null;
+  function draw() {
+    analyser.getByteFrequencyData(freqData);
+    const W = canvas.width, H = canvas.height;
+    ctx2d.clearRect(0, 0, W, H);
+
+    const gap = W / (BARS * 1.35);
+    const bw = W / BARS;
+    const midY = H * 0.62;
+
+    let playing = !audioEl.paused && !audioEl.ended;
+
+    // ---- beat detection from low frequencies ----
+    let bass = 0;
+    for (let i = 0; i < Math.floor(freqData.length * 0.15); i++) bass += freqData[i];
+    const avgBass = playing ? bass / (freqData.length * 0.15) : 0;
+    beatEnergy = beatEnergy * 0.75 + (playing ? avgBass / 255 : 0) * 0.25;
+    const now = Date.now();
+    const beatHit = playing && beatEnergy > 0.55 && (now - lastPhrase) > 500;
+    if (beatHit) {
+      lastPhrase = now;
+      pickPhrase();
+      showPhrase();
+    }
+
+    for (let i = 0; i < BARS; i++) {
+      let v = playing ? freqData[Math.floor((i / BARS) * freqData.length * 0.7)] / 255 : 0;
+      // idle organic wave
+      const idle = 0.06 + 0.04 * Math.sin(now / 500 + i * 0.55);
+      if (!playing) v = idle;
+      const barH = Math.max(3, v * (H * 0.82));
+
+      // spectrum bar with glow
+      const grad = ctx2d.createLinearGradient(0, midY - barH, 0, midY);
+      grad.addColorStop(0, COLORS[i]);
+      grad.addColorStop(1, "rgba(20,20,30,0.9)");
+      ctx2d.fillStyle = grad;
+      ctx2d.shadowColor = COLORS[i];
+      ctx2d.shadowBlur = 10;
+      ctx2d.fillRect(i * bw + gap / 2, midY - barH, bw - gap, barH);
+      ctx2d.shadowBlur = 0;
+
+      // mirrored reflection (pseudo-3D floor)
+      ctx2d.globalAlpha = 0.18;
+      const refGrad = ctx2d.createLinearGradient(0, midY, 0, H);
+      refGrad.addColorStop(0, COLORS[i]);
+      refGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx2d.fillStyle = refGrad;
+      ctx2d.fillRect(i * bw + gap / 2, midY + 2, bw - gap, barH * 0.55);
+      ctx2d.globalAlpha = 1;
+    }
+
+    // floor line
+    ctx2d.fillStyle = "rgba(255,255,255,0.08)";
+    ctx2d.fillRect(0, midY, W, 1);
+
+    // ---------- WMP-style particle field (bottom window) ----------
+    if (mctx && moodCanvas) {
+      const MW = moodCanvas.width, MH = moodCanvas.height;
+      mctx.clearRect(0, 0, MW, MH);
+      const intensity = playing ? (0.2 + beatEnergy * 1.6) : 0.08;
+
+      // rotating 3D-ish ring in center
+      const cx = MW / 2, cy = MH / 2;
+      const ringRad = 38 + beatEnergy * 26;
+      mctx.strokeStyle = `hsla(${(now / 20) % 360}, 90%, 60%, ${0.35 + beatEnergy * 0.5})`;
+      mctx.lineWidth = 3;
+      mctx.shadowColor = `hsl(${(now / 20) % 360}, 90%, 60%)`;
+      mctx.shadowBlur = 16;
+      mctx.beginPath();
+      mctx.arc(cx, cy, ringRad, now / 700, now / 700 + (3 + beatEnergy * 2.5));
+      mctx.stroke();
+      mctx.shadowBlur = 0;
+
+      // inner glow disc
+      const disc = mctx.createRadialGradient(cx, cy, 2, cx, cy, ringRad);
+      disc.addColorStop(0, `hsla(${(now / 25) % 360}, 90%, 60%, ${0.18 * intensity + 0.05})`);
+      disc.addColorStop(1, "rgba(0,0,0,0)");
+      mctx.fillStyle = disc;
+      mctx.fillRect(0, 0, MW, MH);
+
+      // particles drifting
+      for (const p of particles) {
+        p.x += p.vx * 0.004 * (1 + intensity);
+        p.y += p.vy * 0.004 * (1 + intensity) - (playing ? beatEnergy * 0.0006 : 0.0002);
+        if (p.x < 0 || p.x > 1) p.vx *= -1;
+        if (p.y < 0 || p.y > 1) p.vy *= -1;
+        const px = p.x * MW, py = p.y * MH;
+        const size = p.r * (1 + beatEnergy * 2);
+        mctx.globalAlpha = 0.5 + beatEnergy * 0.5;
+        mctx.fillStyle = `hsl(${p.hue}, 85%, 65%)`;
+        mctx.shadowColor = `hsl(${p.hue}, 85%, 65%)`;
+        mctx.shadowBlur = 8;
+        mctx.beginPath();
+        mctx.arc(px, py, size, 0, Math.PI * 2);
+        mctx.fill();
+      }
+      mctx.globalAlpha = 1;
+      mctx.shadowBlur = 0;
+    }
+
+    raf = requestAnimationFrame(draw);
+  }
+  draw();
+
+  visRegistry.set(audioEl, { ctx, analyser, raf });
+
+  // Expose the live analyser to the global visual effects window.
+  audioEl.addEventListener("play", () => {
+    if (ctx.state === "suspended") ctx.resume();
+    window.__fx = { analyser, audioEl };
+  });
+  audioEl.addEventListener("pause", () => {
+    if (window.__fx && window.__fx.audioEl === audioEl) window.__fx = null;
+  });
+  audioEl.addEventListener("ended", () => {
+    if (window.__fx && window.__fx.audioEl === audioEl) window.__fx = null;
+  });
+
+  return audioEl;
+}
+
+function teardownVisualizer(audioEl) {
+  const entry = visRegistry.get(audioEl);
+  if (entry) {
+    cancelAnimationFrame(entry.raf);
+    try { entry.ctx.close(); } catch (e) {}
+    visRegistry.delete(audioEl);
+  }
+}
+
+/* ---------- Init ---------- */
+genBtn.addEventListener("click", generate);
+$("prompt").addEventListener("keydown", e => {
+  if (e.key === "Enter") generate();
+});
+checkHealth();
+setInterval(checkHealth, 10000);
+recoverPending();
+loadHistory();
+loadBrandLogo();
+
+/* ---------- Remix / reference audio ---------- */
+let currentMode = "text";          // "text" or "remix"
+let uploadedRefPath = null;        // server-side path after upload
+let uploadedRefUrl = null;         // playable server URL
+
+$("modeText").addEventListener("click", () => setMode("text"));
+$("modeRemix").addEventListener("click", () => setMode("remix"));
+
+function setMode(mode) {
+  currentMode = mode;
+  $("modeText").classList.toggle("on", mode === "text");
+  $("modeRemix").classList.toggle("on", mode === "remix");
+  $("refZone").classList.toggle("active", mode === "remix");
+  if (mode === "text") {
+    $("genBtn").textContent = "🎵 Generar música";
+  } else {
+    $("genBtn").textContent = "🎧 Generar remix";
+  }
+}
+
+$("refInput").addEventListener("change", handleRefUpload);
+$("clearRef").addEventListener("click", clearRefAudio);
+
+async function handleRefUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 50 * 1024 * 1024) {
+    toast("El archivo es demasiado grande (máx 50 MB)");
+    $("refInput").value = "";
+    return;
+  }
+  $("refName").textContent = file.name;
+
+  // local preview
+  if (window._refLocalUrl) URL.revokeObjectURL(window._refLocalUrl);
+  const localUrl = URL.createObjectURL(file);
+  window._refLocalUrl = localUrl;
+  $("refAudio").src = localUrl;
+  $("refPreview").classList.add("show");
+
+  // upload to server
+  toast("Subiendo audio de referencia…");
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    const r = await fetch(API_BASE + "/upload_reference", { method: "POST", body: fd });
+    let j;
+    try { j = await r.json(); } catch (e) { throw new Error("Respuesta inválida del servidor"); }
+    if (!r.ok || j.code !== 200 || !(j.data && j.data.path)) {
+      throw new Error(j.error || j.detail || "Error al subir el audio");
+    }
+    uploadedRefPath = j.data.path;
+    uploadedRefUrl = API_BASE + "/v1/audio?path=" + encodeURIComponent(j.data.path);
+    $("refAudio").src = uploadedRefUrl;
+    toast("✅ Audio de referencia listo");
+  } catch (err) {
+    toast("❌ " + err.message);
+    clearRefAudio();
+  }
+}
+
+function clearRefAudio() {
+  $("refInput").value = "";
+  $("refName").textContent = "";
+  $("refPreview").classList.remove("show");
+  $("refAudio").removeAttribute("src");
+  if (window._refLocalUrl) URL.revokeObjectURL(window._refLocalUrl);
+  window._refLocalUrl = null;
+  uploadedRefPath = null;
+  uploadedRefUrl = null;
+}
+
+$("refStrength").addEventListener("input", e => {
+  $("refStrengthVal").textContent = Math.round(parseFloat(e.target.value) * 100) + "%";
+});
+
+/* ---------- Visual effects window (3 modes) ---------- */
+const fxCanvas = $("fxCanvas");
+const fxCtx = fxCanvas.getContext("2d");
+let fxMode = "bars";
+let fxRaf = null;
+const fxStatus = document.querySelector(".fx-status");
+
+function fxResize() {
+  const rect = fxCanvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  fxCanvas.width = Math.max(1, Math.round(rect.width * dpr));
+  fxCanvas.height = Math.max(1, Math.round(rect.height * dpr));
+}
+fxResize();
+window.addEventListener("resize", fxResize);
+
+document.querySelectorAll(".fx-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".fx-btn").forEach(b => b.classList.remove("on"));
+    btn.classList.add("on");
+    fxMode = btn.dataset.fx;
+    fxStatus.textContent = `Efecto: ${btn.textContent.trim()} · reproduce una canción`;
+  });
+});
+
+function fxAnalyser() {
+  const fx = window.__fx;
+  return fx && fx.analyser && !fx.audioEl.paused && !fx.audioEl.ended ? fx.analyser : null;
+}
+
+const FX_COLORS = [];
+for (let i = 0; i < 64; i++) FX_COLORS.push(`hsl(${300 - (i / 64) * 300}, 95%, 60%)`);
+
+function fxDraw() {
+  const W = fxCanvas.width, H = fxCanvas.height;
+  const analyser = fxAnalyser();
+  fxCtx.clearRect(0, 0, W, H);
+  const t = Date.now();
+
+  if (fxMode === "bars") {
+    // 3D-ish spectrum bars with glow + reflection
+    const N = 48;
+    const freq = new Uint8Array(analyser ? analyser.frequencyBinCount : 0);
+    if (analyser) analyser.getByteFrequencyData(freq);
+    const bw = W / N;
+    const midY = H * 0.58;
+    for (let i = 0; i < N; i++) {
+      let v = analyser ? freq[Math.floor((i / N) * freq.length * 0.7)] / 255 : 0;
+      if (!analyser) v = 0.05 + 0.04 * Math.sin(t / 500 + i * 0.5);
+      const barH = Math.max(3, v * (H * 0.8));
+      const col = FX_COLORS[Math.floor((i / N) * FX_COLORS.length)];
+      const grad = fxCtx.createLinearGradient(0, midY - barH, 0, midY);
+      grad.addColorStop(0, col);
+      grad.addColorStop(1, "rgba(15,16,28,0.95)");
+      fxCtx.fillStyle = grad;
+      fxCtx.shadowColor = col;
+      fxCtx.shadowBlur = 12;
+      fxCtx.fillRect(i * bw + bw * 0.12, midY - barH, bw * 0.76, barH);
+      fxCtx.shadowBlur = 0;
+      fxCtx.globalAlpha = 0.16;
+      fxCtx.fillRect(i * bw + bw * 0.12, midY + 2, bw * 0.76, barH * 0.5);
+      fxCtx.globalAlpha = 1;
+    }
+    fxCtx.fillStyle = "rgba(255,255,255,0.08)";
+    fxCtx.fillRect(0, midY, W, 1);
+  } else if (fxMode === "wave") {
+    // animated waveform
+    const N = 512;
+    const data = new Uint8Array(analyser ? analyser.fftSize : 0);
+    if (analyser) analyser.getByteTimeDomainData(data);
+    const cy = H / 2;
+    fxCtx.lineWidth = 3;
+    fxCtx.strokeStyle = `hsl(${(t / 25) % 360}, 90%, 62%)`;
+    fxCtx.shadowColor = `hsl(${(t / 25) % 360}, 90%, 62%)`;
+    fxCtx.shadowBlur = 14;
+    fxCtx.beginPath();
+    for (let i = 0; i < W; i++) {
+      const idx = Math.floor((i / W) * N);
+      let v = analyser ? (data[idx] - 128) / 128 : Math.sin(i * 0.03 + t / 400) * 0.3;
+      const x = i, y = cy + v * (H * 0.42);
+      if (i === 0) fxCtx.moveTo(x, y); else fxCtx.lineTo(x, y);
+    }
+    fxCtx.stroke();
+    fxCtx.shadowBlur = 0;
+    // baseline glow
+    fxCtx.fillStyle = "rgba(255,255,255,0.06)";
+    fxCtx.fillRect(0, cy, W, 1);
+  } else if (fxMode === "pulse") {
+    // beat pulsing circles
+    const cx = W / 2, cy = H / 2;
+    let bass = 0;
+    if (analyser) {
+      const freq = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(freq);
+      for (let i = 0; i < Math.floor(freq.length * 0.15); i++) bass += freq[i];
+      bass = bass / (freq.length * 0.15) / 255;
+    } else {
+      bass = 0.25 + 0.15 * Math.sin(t / 300);
+    }
+    const pulse = 1 + bass * 1.4;
+    for (let r = 0; r < 4; r++) {
+      const rad = (28 + r * 24) * pulse;
+      const hue = (r * 60 + t / 30) % 360;
+      fxCtx.strokeStyle = `hsla(${hue}, 90%, 62%, ${0.55 - r * 0.1})`;
+      fxCtx.lineWidth = 3 - r * 0.4;
+      fxCtx.shadowColor = `hsl(${hue}, 90%, 60%)`;
+      fxCtx.shadowBlur = 16;
+      fxCtx.beginPath();
+      fxCtx.arc(cx, cy, rad, 0, Math.PI * 2);
+      fxCtx.stroke();
+    }
+    fxCtx.shadowBlur = 0;
+    // center glow
+    const g = fxCtx.createRadialGradient(cx, cy, 2, cx, cy, 60 * pulse);
+    g.addColorStop(0, `hsla(${(t / 20) % 360}, 90%, 60%, ${0.25 + bass * 0.3})`);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    fxCtx.fillStyle = g;
+    fxCtx.fillRect(0, 0, W, H);
+  } else if (fxMode === "aurora") {
+    // flowing aurora ribbons + star field, reacts to bass
+    let bass = 0;
+    if (analyser) {
+      const freq = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(freq);
+      for (let i = 0; i < Math.floor(freq.length * 0.12); i++) bass += freq[i];
+      bass = bass / (freq.length * 0.12) / 255;
+    }
+    const energy = analyser ? 0.5 + bass * 1.5 : 0.6;
+    for (let layer = 0; layer < 3; layer++) {
+      fxCtx.beginPath();
+      fxCtx.lineWidth = 3 + layer;
+      fxCtx.strokeStyle = `hsla(${(t / 40 + layer * 120) % 360}, 92%, 60%, ${0.7 - layer * 0.15})`;
+      fxCtx.shadowColor = `hsl(${(t / 40 + layer * 120) % 360}, 92%, 60%)`;
+      fxCtx.shadowBlur = 20;
+      for (let x = 0; x <= W; x += 4) {
+        const y = H * 0.5
+          + Math.sin(x * 0.012 + t / 900 + layer * 2) * (H * 0.18) * energy
+          + Math.sin(x * 0.031 - t / 1400) * (H * 0.08);
+        if (x === 0) fxCtx.moveTo(x, y); else fxCtx.lineTo(x, y);
+      }
+      fxCtx.stroke();
+    }
+    fxCtx.shadowBlur = 0;
+    // twinkling stars
+    for (let i = 0; i < 40; i++) {
+      const sx = (i * 137.5) % W, sy = (i * 71.3) % (H * 0.5);
+      const tw = 0.3 + 0.7 * Math.abs(Math.sin(t / 300 + i * 1.7));
+      fxCtx.globalAlpha = tw * (0.4 + bass * 0.4);
+      fxCtx.fillStyle = "#fff";
+      fxCtx.fillRect(sx, sy, 1.5, 1.5);
+    }
+    fxCtx.globalAlpha = 1;
+  } else if (fxMode === "vinyl") {
+    // rotating vinyl disc whose grooves pulse with the music
+    const cx = W / 2, cy = H / 2;
+    let bass = 0, mid = 0;
+    if (analyser) {
+      const freq = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(freq);
+      for (let i = 0; i < Math.floor(freq.length * 0.12); i++) bass += freq[i];
+      for (let i = Math.floor(freq.length * 0.2); i < Math.floor(freq.length * 0.5); i++) mid += freq[i];
+      bass = bass / (freq.length * 0.12) / 255;
+      mid = mid / (freq.length * 0.3) / 255;
+    }
+    const R = Math.min(W, H) * 0.42 * (1 + bass * 0.08);
+    const rot = t / 160;
+    const grad = fxCtx.createRadialGradient(cx - R * 0.2, cy - R * 0.2, R * 0.05, cx, cy, R);
+    grad.addColorStop(0, "#3a3a3a");
+    grad.addColorStop(0.55, "#181818");
+    grad.addColorStop(0.85, "#0c0c0c");
+    grad.addColorStop(1, "#050505");
+    fxCtx.beginPath();
+    fxCtx.arc(cx, cy, R, 0, Math.PI * 2);
+    fxCtx.fillStyle = grad;
+    fxCtx.fill();
+    fxCtx.shadowColor = "rgba(0,0,0,0.8)";
+    fxCtx.shadowBlur = 24;
+    fxCtx.beginPath();
+    fxCtx.arc(cx, cy, R, 0, Math.PI * 2);
+    fxCtx.strokeStyle = "#222";
+    fxCtx.lineWidth = 3;
+    fxCtx.stroke();
+    fxCtx.shadowBlur = 0;
+    // grooves rotating
+    for (let r = R * 0.25; r < R * 0.9; r += R * 0.08) {
+      fxCtx.beginPath();
+      fxCtx.arc(cx, cy, r, rot, rot + Math.PI * (0.6 + mid * 0.8));
+      fxCtx.strokeStyle = `hsla(${(t / 30) % 360}, 80%, 60%, ${0.25 + mid * 0.4})`;
+      fxCtx.lineWidth = 1.6;
+      fxCtx.stroke();
+    }
+    // center label pulsing with beat
+    const labelR = R * 0.16;
+    const lGrad = fxCtx.createRadialGradient(cx, cy, 1, cx, cy, labelR);
+    lGrad.addColorStop(0, `hsl(${(t / 20) % 360}, 90%, 70%)`);
+    lGrad.addColorStop(1, `hsl(${(t / 20) % 360}, 80%, 45%)`);
+    fxCtx.beginPath();
+    fxCtx.arc(cx, cy, labelR * (1 + bass * 0.25), 0, Math.PI * 2);
+    fxCtx.fillStyle = lGrad;
+    fxCtx.shadowColor = `hsl(${(t / 20) % 360}, 90%, 60%)`;
+    fxCtx.shadowBlur = 18 + bass * 20;
+    fxCtx.fill();
+    fxCtx.shadowBlur = 0;
+    // stylus arm hint
+    fxCtx.beginPath();
+    fxCtx.moveTo(cx + R * 0.75, cy - R * 0.75);
+    fxCtx.lineTo(cx + R * 0.1, cy - R * 0.1);
+    fxCtx.strokeStyle = "rgba(255,255,255,0.35)";
+    fxCtx.lineWidth = 2;
+    fxCtx.stroke();
+  }
+
+  fxRaf = requestAnimationFrame(fxDraw);
+}
+fxDraw();
+</script>
+</body>
+</html>
